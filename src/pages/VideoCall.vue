@@ -20,6 +20,12 @@
             <div class="btn-wrapper mt-10">
                 <button type="submit" :disabled="joined">Join</button>
                 <button type="button" :disabled="!joined" @click="leave">Leave</button>
+                <button type="button" :disabled="!joined" @click="toggleAudio">
+                    {{ isAudioEnabled ? 'Mute Audio' : 'Unmute Audio' }}
+                </button>
+                <button type="button" :disabled="!joined" @click="toggleVideo">
+                    {{ isVideoEnabled ? 'Disable Video' : 'Enable Video' }}
+                </button>
             </div>
         </form>
         <div v-if="joined" class="mt-10">
@@ -39,10 +45,8 @@
 
 <script setup>
 import AgoraRTC from "agora-rtc-sdk-ng"
-import { onMounted, onUnmounted, ref } from "vue"
-import { ElMessage } from 'element-plus'
+import { onMounted, onUnmounted, ref, computed } from "vue"
 import AgoraVideoPlayer from './../components/AgoraVideoPlayer.vue'
-// import { showJoinedMessage } from "./../utils/utils"
 
 let client = null
 let codec = 'vp8'
@@ -68,14 +72,6 @@ onUnmounted(() => {
         leave()
     }
 })
-
-const profileChange = async (val) => {
-    await videoTrack.value?.setEncoderConfiguration(val)
-}
-
-const codecChange = (val) => {
-    codec = val
-}
 
 const initTracks = async () => {
     if (audioTrack.value && videoTrack.value) {
@@ -107,24 +103,21 @@ const join = async () => {
             client = AgoraRTC.createClient({
                 mode: "rtc",
                 codec: codec
-            });
+            })
         }
 
         // Add event listeners to the client.
         client.on("user-published", handleUserPublished)
-        client.on("user-unpublished", handleUserUnpublished);
+        client.on("user-unpublished", handleUserUnpublished)
 
         const options = { ...form.value }
-        // Join a channel
         options.uid = await client.join(options.appId, options.channel, options.token || null, options.uid || null)
         await initTracks()
         const tracks = [audioTrack.value, videoTrack.value]
         await client.publish(tracks)
-        // showJoinedMessage(options)
         joined.value = true
     } catch (error) {
         console.error(error)
-        // ElMessage.error(error.message)
     }
 }
 
@@ -140,8 +133,25 @@ const leave = async () => {
     remoteUsers.value = {}
     await client.leave()
     joined.value = false
-    // ElMessage.success('leave channel success!')
 }
+
+const toggleAudio = () => {
+    if (audioTrack.value) {
+        audioTrack.value.setEnabled(!audioTrack.value.enabled)
+    }
+}
+
+const toggleVideo = () => {
+    if (videoTrack.value) {
+        videoTrack.value.setEnabled(!videoTrack.value.enabled)
+    }
+}
+
+
+const isAudioEnabled = computed(() => audioTrack.value ? audioTrack.value.enabled : false)
+const isVideoEnabled = computed(() => videoTrack.value ? videoTrack.value.enabled : false)
+
+
 </script>
 
 <style>
