@@ -1,15 +1,14 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <VideoCall />
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
+// import HelloWorld from './components/HelloWorld.vue'
+import VideoCall from './pages/VideoCall.vue'
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    VideoCall
   }
 }
 </script>
