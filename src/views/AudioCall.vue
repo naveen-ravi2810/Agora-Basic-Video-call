@@ -84,10 +84,10 @@ const audioTrack = ref(null);
 const videoTrack = ref(null);
 const formRef = ref();
 const form = ref({
-    appId: '4a54b15567f148e0ae75492dc3c97b8c',
-    channel: 'channel_1',
+    appId: '',
+    channel: '',
     token: '',
-    uid: 'naveen'
+    uid: ''
 });
 const channel_users = ref([]);
 

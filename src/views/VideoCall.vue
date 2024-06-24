@@ -35,6 +35,9 @@
                         class="btn-video bg-orange-500 text-white p-2 rounded mb-2 disabled:opacity-50">
                         {{ isVideoEnabled ? 'Disable Video' : 'Enable Video' }}
                     </button>
+                    <button type="button" :disabled="!joined" @click="toggleScreenSharing"
+                        class="btn-leave bg-red-500 text-white p-2 rounded mb-2 disabled:opacity-50">Share
+                        Screen</button>
                 </div>
             </form>
             <div v-if="joined" class="user-list w-full">
@@ -76,6 +79,9 @@
                     </div>
                 </div>
             </div>
+            <ScreenSharing v-if="screenShared" :appId="form.appId" :channel="form.channel" :token="form.token"
+                :uid="form.uid">
+            </ScreenSharing>
         </div>
     </div>
 </template>
@@ -84,6 +90,7 @@
 import AgoraRTC from "agora-rtc-sdk-ng";
 import { onMounted, onUnmounted, ref, computed } from "vue";
 import AgoraVideoPlayer from './../components/AgoraVideoPlayer.vue';
+import ScreenSharing from "./../components/ScreenSharing.vue";
 import Video404 from './../assets/placeholder.jpg';
 
 // Define the image sources for the status icons
@@ -102,12 +109,13 @@ const audioTrack = ref(null);
 const videoTrack = ref(null);
 const formRef = ref();
 const form = ref({
-    appId: '4a54b15567f148e0ae75492dc3c97b8c',
-    channel: 'channel_1',
+    appId: '',
+    channel: '',
     token: '',
-    uid: 'naveen'
+    uid: ''
 });
 const channel_users = ref([]);
+const screenShared = ref(false);
 
 onUnmounted(() => {
     if (joined.value) {
@@ -252,6 +260,11 @@ const toggleVideo = async () => {
 const isAudioEnabled = computed(() => audioTrack.value ? audioTrack.value.enabled : false);
 const isVideoEnabled = computed(() => videoTrack.value ? videoTrack.value.enabled : false);
 // --------------------------------------------------------------------------------------------------- //
+
+
+const toggleScreenSharing = async () => {
+    screenShared.value = !screenShared.value;
+};
 </script>
 
 <style scoped>
