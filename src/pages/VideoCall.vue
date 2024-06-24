@@ -32,13 +32,21 @@
             <div class="text">Local User</div>
             <AgoraVideoPlayer v-if="videoTrack || audioTrack" :audioTrack="audioTrack" :videoTrack="videoTrack"
                 :isLocal="true"></AgoraVideoPlayer>
+            <div v-else>
+                {{ uid }}
+                <img :src="Video404" alt="VideoNot Found">
+            </div>
         </div>
-        <div v-if="Object.keys(remoteUsers).length">
-            <div class="text">Remote Users</div>
-            <div style="display: flex; gap: 10px;">
-                <AgoraVideoPlayer v-for="item in remoteUsers" :key="item.uid" :videoTrack="item.videoTrack"
-                    :audioTrack="item.audioTrack" :text="item.uid">
+        <div class="text">Remote Users</div>
+        <div v-for="uid in channel_users" :key="uid">
+            <div v-if="isVideoAudioOn(uid)">
+                <AgoraVideoPlayer v-for="item in remoteUsers" :v-if="item.uid === uid" :key="item.uid"
+                    :videoTrack="item.videoTrack" :audioTrack="item.audioTrack" :text="item.uid">
                 </AgoraVideoPlayer>
+            </div>
+            <div v-else>
+                {{ uid }}
+                <img :src="Video404" alt="VideoNot Found">
             </div>
         </div>
     </div>
@@ -48,7 +56,7 @@
 import AgoraRTC from "agora-rtc-sdk-ng"
 import { onMounted, onUnmounted, ref, computed } from "vue"
 import AgoraVideoPlayer from './../components/AgoraVideoPlayer.vue'
-
+import Video404 from './../assets/placeholder.jpg'
 let client = null
 let codec = 'vp8'
 
@@ -58,11 +66,12 @@ const audioTrack = ref(null)
 const videoTrack = ref(null)
 const formRef = ref()
 const form = ref({
-    appId: '',
-    channel: '',
+    appId: '4a54b15567f148e0ae75492dc3c97b8c',
+    channel: '1234',
     token: '',
-    uid: ''
+    uid: 'user1'
 })
+const channel_users = ref([])
 
 onUnmounted(() => {
     if (joined.value) {
@@ -96,6 +105,42 @@ const handleUserUnpublished = (user, mediaType) => {
     }
 }
 
+const handleUserJoined = (user) => {
+    channel_users.value.push(user.uid)
+}
+
+const handleUserLeft = (user, reason) => {
+    const index = full_users.value.indexOf(user.uid)
+    if (index !== -1) {
+        full_users.value.splice(index, 1)
+    }
+}
+
+const isVideoAudioOn = (uid) => {
+    return remoteUsers.value.hasOwnProperty(uid);
+}
+
+
+const getVideoTrack = (uid) => {
+    // Ensure remoteUsers.value is an array
+    if (!Array.isArray(remoteUsers.value)) {
+        return null; // or handle error case appropriately
+    }
+
+    const user = remoteUsers.value.find(user => user.uid === uid);
+    return user ? user.videoTrack : null;
+}
+
+const getAudioTrack = (uid) => {
+    // Ensure remoteUsers.value is an array
+    if (!Array.isArray(remoteUsers.value)) {
+        return null; // or handle error case appropriately
+    }
+
+    const user = remoteUsers.value.find(user => user.uid === uid);
+    return user ? user.audioTrack : null;
+}
+
 const join = async () => {
     try {
         if (!client) {
@@ -108,6 +153,8 @@ const join = async () => {
         // Add event listeners to the client.
         client.on("user-published", handleUserPublished)
         client.on("user-unpublished", handleUserUnpublished)
+        client.on("user-joined", handleUserJoined)
+        client.on("user-left", handleUserLeft)
 
         const options = { ...form.value }
         options.uid = await client.join(options.appId, options.channel, options.token || null, options.uid || null)
