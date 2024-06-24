@@ -30,7 +30,8 @@
         </form>
         <div v-if="joined" class="mt-10">
             <div class="text">Local User</div>
-            <AgoraVideoPlayer :audioTrack="audioTrack" :videoTrack="videoTrack" :isLocal="true"></AgoraVideoPlayer>
+            <AgoraVideoPlayer v-if="videoTrack || audioTrack" :audioTrack="audioTrack" :videoTrack="videoTrack"
+                :isLocal="true"></AgoraVideoPlayer>
         </div>
         <div v-if="Object.keys(remoteUsers).length">
             <div class="text">Remote Users</div>
@@ -63,26 +64,24 @@ const form = ref({
     uid: ''
 })
 
-onMounted(async () => {
-    await initTracks()
-})
-
 onUnmounted(() => {
     if (joined.value) {
         leave()
     }
 })
 
-const initTracks = async () => {
-    if (audioTrack.value && videoTrack.value) {
+const initAudioTrack = async () => {
+    if (audioTrack.value) {
         return
     }
-    const tracks = await Promise.all([
-        AgoraRTC.createMicrophoneAudioTrack(),
-        AgoraRTC.createCameraVideoTrack()
-    ])
-    audioTrack.value = tracks[0]
-    videoTrack.value = tracks[1]
+    audioTrack.value = await AgoraRTC.createMicrophoneAudioTrack()
+}
+
+const initVideoTrack = async () => {
+    if (videoTrack.value) {
+        return
+    }
+    videoTrack.value = await AgoraRTC.createCameraVideoTrack()
 }
 
 const handleUserPublished = async (user, mediaType) => {
@@ -112,9 +111,6 @@ const join = async () => {
 
         const options = { ...form.value }
         options.uid = await client.join(options.appId, options.channel, options.token || null, options.uid || null)
-        await initTracks()
-        const tracks = [audioTrack.value, videoTrack.value]
-        await client.publish(tracks)
         joined.value = true
     } catch (error) {
         console.error(error)
@@ -135,23 +131,26 @@ const leave = async () => {
     joined.value = false
 }
 
-const toggleAudio = () => {
+const toggleAudio = async () => {
     if (audioTrack.value) {
         audioTrack.value.setEnabled(!audioTrack.value.enabled)
+    } else {
+        await initAudioTrack()
+        await client.publish([audioTrack.value])
     }
 }
 
-const toggleVideo = () => {
+const toggleVideo = async () => {
     if (videoTrack.value) {
         videoTrack.value.setEnabled(!videoTrack.value.enabled)
+    } else {
+        await initVideoTrack()
+        await client.publish([videoTrack.value])
     }
 }
-
 
 const isAudioEnabled = computed(() => audioTrack.value ? audioTrack.value.enabled : false)
 const isVideoEnabled = computed(() => videoTrack.value ? videoTrack.value.enabled : false)
-
-
 </script>
 
 <style>
