@@ -1,6 +1,6 @@
 <template>
   <div :style="style">
-    <div v-if="text" :style="{ marginTop: '10px', marginBottom: '10px' }">{{ text }}</div>
+    <!-- <div v-if="text" :style="{ marginTop: '10px', marginBottom: '10px' }">{{ text }}</div> -->
     <div ref="videoRef" :style="{ width, height }" />
   </div>
 </template>
